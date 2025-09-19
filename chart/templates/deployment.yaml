@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "artifact-cache.fullname" . }}
+  labels:
+    {{- include "artifact-cache.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "artifact-cache.selectorLabels" . | nindent  6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "artifact-cache.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args: ["make serve"]
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: artifact-cache
+              mountPath: {{ .Values.config.mount_path }}
+              subPath: {{ .Values.config.mount_subpath }}
+          env: 
+            - name: PVC_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: pvc_name
+                  name: {{ include "artifact-cache.fullname" . }}-config
+            - name: STATIC_RESOURCE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  key: static_resource_path
+                  name: {{ include "artifact-cache.fullname" . }}-config
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  key: log_level
+                  name: {{ include "artifact-cache.fullname" . }}-config
+      volumes:
+        - name: artifact-cache
+          persistentVolumeClaim:
+            claimName: {{ .Values.config.pvc_name }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "artifact-cache.fullname" . }}
+  labels:
+    {{- include "artifact-cache.labels" . | nindent 4 }}
+  {{- if .Values.ambassador.flag }}
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v1
+      kind:  Mapping
+      name:  {{ .Values.ambassador.mapping_name }}
+      prefix: /artifact/
+      service: {{ include "artifact-cache.fullname" . }}:{{ .Values.service.port }}
+      {{- if and (and (hasKey .Values "global") (hasKey .Values.global "ambassador_id")) .Values.global.ambassador_id }}
+      ambassador_id: {{ .Values.global.ambassador_id }}
+      {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "artifact-cache.selectorLabels" . | nindent 4 }}

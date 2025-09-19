@@ -1,0 +1,6 @@
+dependencies:
+- name: resty
+  repository: https://helxplatform.github.io/helm-charts/
+  version: 1.0.3
+digest: sha256:fccf37162d1d956a866d397231db93604f439418b79adac0e9240778fe54c7d5
+generated: "2025-09-18T19:07:58.123138-04:00"

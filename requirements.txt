@@ -1,0 +1,5 @@
+requests==2.32.5
+GitPython==3.1.45
+urllib3==2.5.0
+kubernetes==33.1.0
+Flask==3.1.2

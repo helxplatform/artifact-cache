@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "artifact-cache.fullname" . }}-config
+  labels:
+    {{- include "artifact-cache.labels" . | nindent 4 }}
+data:
+  pvc_name: {{ .Values.config.pvc_name | quote }}
+  static_resource_path: {{ .Values.config.mount_path | quote }}
+  log_level: {{ .Values.config.log_level | quote }}

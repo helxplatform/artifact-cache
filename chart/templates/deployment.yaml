@@ -52,6 +52,7 @@ spec:
             - name: artifact-cache
               mountPath: {{ .Values.config.mount_path }}
               subPath: {{ .Values.config.mount_subpath }}
+              readOnly: true
           env: 
             - name: PVC_NAME
               valueFrom:

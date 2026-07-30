@@ -55,6 +55,7 @@ def create_mount_pod(pvc_name: str, namespace: str, mount_path: Path) -> tuple[s
                 client.V1Container(
                     name=container_name,
                     image="busybox",
+                    image_pull_policy="IfNotPresent",
                     command=["tail", "-f", "/dev/null"],
                     volume_mounts=[client.V1VolumeMount(
                         mount_path=str(mount_path),
@@ -157,7 +158,22 @@ def copy_directory_to_mount(pod_name: str, container_name: str, namespace: str, 
         f"{ namespace }/{ pod_name }:{ str(dest) }",
         f"--retries={ retries }"
     ]
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        error_msg = f"""
+Command failed!
+
+Command: {' '.join(e.cmd)}
+Exit code: {e.returncode}
+
+--- STDOUT ---
+{e.stdout.strip() or '[no output]'}
+
+--- STDERR ---
+{e.stderr.strip() or '[no output]'}
+""".strip()
+        raise RuntimeError(error_msg) from e
 
     logger.info(f"Successfully copied '{ src }' into '{ dest }' on PVC.")
 

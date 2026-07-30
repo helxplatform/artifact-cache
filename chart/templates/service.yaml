@@ -4,8 +4,16 @@ metadata:
   name: {{ include "artifact-cache.fullname" . }}
   labels:
     {{- include "artifact-cache.labels" . | nindent 4 }}
-  {{- if .Values.ambassador.flag }}
+  {{- $ambassadorId := .Values.ambassador.ambassador_id }}
+  {{- if and (not $ambassadorId) (hasKey .Values "global") (hasKey .Values.global "ambassador_id") }}
+  {{- $ambassadorId = .Values.global.ambassador_id }}
+  {{- end }}
+  {{- if or .Values.ambassador.flag .Values.service.annotations }}
   annotations:
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.ambassador.flag }}
     getambassador.io/config: |
       ---
       apiVersion: ambassador/v1
@@ -13,9 +21,10 @@ metadata:
       name:  {{ .Values.ambassador.mapping_name }}
       prefix: /artifact/
       service: {{ include "artifact-cache.fullname" . }}:{{ .Values.service.port }}
-      {{- if and (and (hasKey .Values "global") (hasKey .Values.global "ambassador_id")) .Values.global.ambassador_id }}
-      ambassador_id: {{ .Values.global.ambassador_id }}
+      {{- if $ambassadorId }}
+      ambassador_id: {{ $ambassadorId }}
       {{- end }}
+    {{- end }}
   {{- end }}
 spec:
   type: {{ .Values.service.type }}

@@ -5,8 +5,18 @@ metadata:
   labels:
     {{- include "artifact-cache.labels" . | nindent 4 }}
   {{- $ambassadorId := .Values.ambassador.ambassador_id }}
-  {{- if and (not $ambassadorId) (hasKey .Values "global") (hasKey .Values.global "ambassador_id") }}
-  {{- $ambassadorId = .Values.global.ambassador_id }}
+  {{/*
+  "and"'s arguments are all evaluated eagerly before it's called -- Go
+  templates have no short-circuiting "and" -- so
+  "hasKey .Values.global ..." was evaluated even when .Values.global was
+  never set (not a map at all), erroring with "wrong type for value;
+  expected map[string]interface {}; got interface {}" on the chart's own
+  defaults. Defaulting .Values.global to an empty map first makes hasKey
+  safe to call unconditionally.
+  */}}
+  {{- $globalValues := default (dict) .Values.global }}
+  {{- if and (not $ambassadorId) (hasKey $globalValues "ambassador_id") }}
+  {{- $ambassadorId = $globalValues.ambassador_id }}
   {{- end }}
   {{- if or .Values.ambassador.flag .Values.service.annotations }}
   annotations:

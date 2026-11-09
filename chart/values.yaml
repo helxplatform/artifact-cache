@@ -19,11 +19,19 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+# UNCDSR-182: allowPrivilegeEscalation: false is required by the AKS policy
+# that denies privilege escalation, and is harmless elsewhere -- keep it when
+# overriding. readOnlyRootFilesystem: true is safe here with no extra
+# volumes: the deployed container only ever runs `make serve` (a plain
+# `python -m http.server`, read-only by nature, over an already
+# readOnly: true PVC mount); `make archive`/export.py is a separate,
+# developer-run workflow, never executed inside this pod.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
   # capabilities:
   #   drop:
   #   - ALL
-  # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
 
